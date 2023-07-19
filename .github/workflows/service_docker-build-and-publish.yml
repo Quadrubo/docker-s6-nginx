@@ -8,7 +8,7 @@ on:
       checkout-type:
         required: true
         type: string
- 16 GB 
+
 env:
   REGISTRY: ghcr.io
 
