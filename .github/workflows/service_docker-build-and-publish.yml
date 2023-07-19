@@ -1,68 +1,33 @@
+name: Build and push Docker image to GHCR
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
 on:
-  workflow_call:
-    inputs:
-      tag-prefix:
-        required: true
-        type: string
-        default: 'beta-'
-      checkout-type:
-        required: true
-        type: string
+  workflow_dispatch:
+  release:
+    branches: ['main']
+    types: ['published']
 
 env:
   REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  PLATFORMS: linux/amd64, linux/arm64, linux/arm/v7
 
 jobs:
-  docker-publish:
+  build:
     runs-on: ubuntu-22.04
     permissions:
       contents: read
       packages: write
-    strategy:
-      matrix:
-        php-version: 
-          # - "7.4"
-          # - "8.0"
-          # - "8.1"
-          - "8.2"
+
     steps:
-      ##
-      # Checkout branch (for push deployments)
-      ##
-      - name: Get branch name
-        if: inputs.checkout-type == 'branch'
-        id: branch-name
-        uses: tj-actions/branch-names@v6
-
-      - uses: actions/checkout@v3
-        if: inputs.checkout-type  == 'branch'
-        with:
-          ref: ${{ steps.branch-name.outputs.current_branch }}
-      
-      ##
-      # Checkout latest stable release (for production releases)
-      ##
-      - name: Get latest stable release
-        if: inputs.checkout-type  == 'latest-stable'
-        id: latest-stable-version
-        run: |
-          echo "LATEST_STABLE_VERSION=$(curl --silent --header "Accept: application/vnd.github.v3.sha" "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')" >> $GITHUB_OUTPUT
-
-      - name: Confirm release tag
-        if: inputs.checkout-type  == 'latest-stable'
-        run: |
-          echo "Latest Stable Release Tag: ${{ steps.latest-stable-version.outputs.LATEST_STABLE_VERSION }}"
-        
-      - name: Checkout latest stable tag
-        if: inputs.checkout-type  == 'latest-stable'
+      - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          ref: ${{ steps.latest-stable-version.outputs.LATEST_STABLE_VERSION }}
 
-      ##
-      # Docker build & publish
-      ##
-      - name: Set up Docker Buildx
+      - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
 
       - name: Log into registry ${{ env.REGISTRY }}
@@ -71,26 +36,21 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: "👨‍🔬 Set docker tags: Non-Release "
-        if: inputs.checkout-type == 'branch'
-        run: echo "DOCKER_TAGS=quadrubo/php-fpm-alpine-s6-nginx:${{ inputs.tag-prefix}}${{ matrix.php-version }}" >> $GITHUB_ENV
 
-      - name: "🚀 Set docker tags: Release"
-        if: inputs.checkout-type == 'latest-stable'
-        run: echo "DOCKER_TAGS=quadrubo/php-fpm-alpine-s6-nginx:${{ inputs.tag-prefix}}${{ matrix.php-version }}, quadrubo/php-fpm-alpine-s6-nginx:${{ inputs.tag-prefix}}${{ matrix.php-version }}-${{ steps.latest-stable-version.outputs.LATEST_STABLE_VERSION }}" >> $GITHUB_ENV
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Build and push Docker image
         id: build-and-push
         uses: docker/build-push-action@v4
         with:
-          build-args: |
-            PHP_VERSION=${{ matrix.php-version }}
-          context: src/php-fpm-alpine-s6-nginx/.
-          platforms: |
-            linux/amd64
-            linux/arm/v7
-            linux/arm64/v8
-          pull: true
+          context: .
           push: true
-          tags: ${{ env.DOCKER_TAGS }}
+          platforms: ${{ env.PLATFORMS }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
