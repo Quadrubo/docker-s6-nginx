@@ -1,0 +1,16 @@
+name: Docker Publish (Production Images)
+
+on:
+  workflow_dispatch:
+  release:
+    types: [released]
+  schedule:
+    - cron: '0 8 * * 2'
+
+jobs:
+  php-fpm-alpine-s6-nginx:
+    uses: ./.github/workflows/service_docker-build-and-publish.yml
+    with:
+      tag-prefix: ''
+      checkout-type: latest-stable
+    secrets: inherit
