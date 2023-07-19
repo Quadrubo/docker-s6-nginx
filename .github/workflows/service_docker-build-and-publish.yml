@@ -11,6 +11,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  PACKAGE_BASE: php-fpm-alpine-s6-nginx
 
 jobs:
   docker-publish:
@@ -23,8 +24,11 @@ jobs:
         php-version: 
           # - "7.4"
           # - "8.0"
-          # - "8.1"
+          - "8.1"
           - "8.2"
+        alpine-version:
+          - "3.17"
+          - "3.18"
     steps:
       ##
       # Checkout branch (for push deployments)
@@ -73,12 +77,12 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: "👨‍🔬 Set docker tags: Non-Release "
-        if: inputs.checkout-type == 'branch'
-        run: echo "DOCKER_TAGS=${{ env.REGISTRY }}/quadrubo/php-fpm-alpine-s6-nginx:${{ inputs.tag-prefix}}${{ matrix.php-version }}" >> $GITHUB_ENV
+        if: inputs.checkout-type == 'latest-stable'
+        run: echo "DOCKER_TAGS=${{ env.REGISTRY }}/quadrubo/${{ env.PACKAGE_BASE }}:php${{ matrix.php-version }}-alpine${{ matrix.alpine-version }}" >> $GITHUB_ENV
 
       - name: "🚀 Set docker tags: Release"
         if: inputs.checkout-type == 'latest-stable'
-        run: echo "DOCKER_TAGS=${{ env.REGISTRY }}/quadrubo/php-fpm-alpine-s6-nginx:${{ inputs.tag-prefix}}${{ matrix.php-version }}, ${{ env.REGISTRY }}/quadrubo/php-fpm-alpine-s6-nginx:${{ inputs.tag-prefix}}${{ matrix.php-version }}-${{ steps.latest-stable-version.outputs.LATEST_STABLE_VERSION }}" >> $GITHUB_ENV
+        run: echo "DOCKER_TAGS=${{ env.REGISTRY }}/quadrubo/${{ env.PACKAGE_BASE }}:php${{ matrix.php-version }}-alpine${{ matrix.alpine-version }}, ${{ env.REGISTRY }}/quadrubo/${{ env.PACKAGE_BASE }}:php${{ matrix.php-version }}-alpine${{ matrix.alpine-version }}-${{ steps.latest-stable-version.outputs.LATEST_STABLE_VERSION }}" >> $GITHUB_ENV
 
       - name: Build and push Docker image
         id: build-and-push
