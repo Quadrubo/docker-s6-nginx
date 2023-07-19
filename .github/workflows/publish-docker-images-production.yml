@@ -9,6 +9,9 @@ on:
 
 jobs:
   php-fpm-alpine-s6-nginx:
+    permissions:
+      contents: read
+      packages: write
     uses: ./.github/workflows/service_docker-build-and-publish.yml
     with:
       tag-prefix: ''
