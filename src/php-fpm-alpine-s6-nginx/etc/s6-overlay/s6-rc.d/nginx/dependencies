@@ -1,3 +1,4 @@
+pre-config
 php-fpm
 configure-ssl
 debug-nginx
