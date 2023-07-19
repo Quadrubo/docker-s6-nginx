@@ -1,8 +1,13 @@
 on:
-  workflow_dispatch:
-  release:
-    branches: ['main']
-    types: ['published']
+  workflow_call:
+    inputs:
+      tag-prefix:
+        required: true
+        type: string
+        default: 'beta-'
+      checkout-type:
+        required: true
+        type: string
 
 env:
   REGISTRY: ghcr.io
