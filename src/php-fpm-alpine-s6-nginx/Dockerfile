@@ -98,6 +98,7 @@ RUN apk update \
     \
     # ensure web permissions are correct
     && chown -R webuser:webgroup /var/www/html/ \
+    && chown -R webuser:webgroup /var/lib/nginx/ \ 
     \
     # install `php-fpm-healthcheck`
     && curl -o /usr/local/bin/php-fpm-healthcheck https://raw.githubusercontent.com/renatomefi/php-fpm-healthcheck/master/php-fpm-healthcheck \
