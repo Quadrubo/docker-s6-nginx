@@ -79,6 +79,7 @@ RUN apk update \
     \
     # install dependencies
     && apk add --no-cache \
+        shadow \
         bash \
         curl \
         ca-certificates \
