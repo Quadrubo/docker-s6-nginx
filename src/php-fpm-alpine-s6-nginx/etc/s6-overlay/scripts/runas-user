@@ -14,6 +14,7 @@ if [[ $PUID != 9999 || $PGID != 9999 ]]; then
     
     # Make sure the home directory is updated with the proper UID & GID
     chown webuser:webgroup $WEBUSER_HOME
+    chown -R webuser:webgroup /var/lib/nginx
 fi
 
 if [[ $S6_LOGGING != 1 ]]; then
